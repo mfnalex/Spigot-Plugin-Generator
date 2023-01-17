@@ -69,14 +69,16 @@ public class Dialog {
         innerWindow.setBorder(padding);
         window.setContentPane(innerWindow);
 
-        JLabel headerGeneral = new JLabel("General Properties");
-        innerWindow.add(headerGeneral, getConstraints(0, 0, 0, 0));
-        initGeneralProperties(generalPropertiesPane, properties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()));
-        innerWindow.add(generalPropertiesPane, getConstraints(0, 1, 1, 1));
 
-        innerWindow.add(new JLabel("Dependencies"), getConstraints(1, 0, 0, 0));
+        JTabbedPane tabbedPane = new JTabbedPane();
+
+        tabbedPane.addTab("General Properties", generalPropertiesPane);
+        initGeneralProperties(generalPropertiesPane, properties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()));
+
+        tabbedPane.addTab("Dependencies", dependenciesPane);
         initDependencies(dependenciesPane, properties.stream().filter(RequiredProperty::isDependency).collect(Collectors.toList()));
-        innerWindow.add(dependenciesPane, getConstraints(1,1,1,1));
+
+        innerWindow.add(tabbedPane, getConstraints(0, 1, 1, 1));
 
         window.pack();
         window.setVisible(true);
