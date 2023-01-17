@@ -1,6 +1,6 @@
 package com.jeff_media.maven_spigot_plugin_gui.utils;
 
-import org.apache.log4j.Logger;
+import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -14,16 +14,14 @@ public class FileDownloader {
 
     private final String url;
     private final File file;
-    protected final Logger logger;
 
-    public FileDownloader(String url, File file, Logger logger) {
+    public FileDownloader(String url, File file) {
         this.url = url;
         this.file = file;
-        this.logger = logger;
     }
 
     public CompletableFuture<File> startDownload() {
-        logger.debug("FileDownloader: Starting download of " + url + " to " + file.getAbsolutePath());
+        SpigotPluginGenerator.getLogger().debug("FileDownloader: Starting download of " + url + " to " + file.getAbsolutePath());
         return CompletableFuture.supplyAsync(() -> {
             try (BufferedInputStream in = new BufferedInputStream(new URL(url).openStream()); FileOutputStream fileOutputStream = new FileOutputStream(file)) {
                 byte[] dataBuffer = new byte[1024];

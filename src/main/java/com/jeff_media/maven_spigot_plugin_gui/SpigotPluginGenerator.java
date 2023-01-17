@@ -1,14 +1,17 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
-import com.jeff_media.maven_spigot_plugin_gui.gui.DownloadDialog;
+import com.jeff_media.maven_spigot_plugin_gui.gui.Dialog;
+import com.jeff_media.maven_spigot_plugin_gui.gui.ProgressDialog;
 import com.jeff_media.maven_spigot_plugin_gui.utils.FileDownloader;
 import lombok.Getter;
 import net.lingala.zip4j.ZipFile;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 public class SpigotPluginGenerator {
@@ -20,7 +23,7 @@ public class SpigotPluginGenerator {
     private static final String MAVEN_VERSION = "3.8.7";
 
     @Getter
-    private static final Logger logger = Logger.getLogger(SpigotPluginGenerator.class);
+    private static final Logger logger = LogManager.getLogger(SpigotPluginGenerator.class);
 
     public SpigotPluginGenerator() throws ExecutionException, InterruptedException {
         logger.info("Starting SpigotPluginGenerator");
@@ -34,43 +37,39 @@ public class SpigotPluginGenerator {
 
         createDataFolder();
 
-        //javax.swing.SwingUtilities.invokeLater(() -> new Dialog());
+        javax.swing.SwingUtilities.invokeLater(() -> new Dialog());
 
-        DownloadDialog downloadDialog = new DownloadDialog("Downloading Maven");
-        new FileDownloader(String.format(BINARY_LINK, MAVEN_VERSION), MAVEN_ZIP_FILE, logger)
-                .startDownload()
-                .whenComplete((file, throwable) -> {
-                    if(throwable != null) {
-                        downloadDialog.dispose();
-                        throw new RuntimeException("Could not download Maven", throwable);
-                    } else {
-                        logger.info("Downloaded Maven binary zip to " + file.getAbsolutePath());
-                    }
-                }).whenComplete((file, throwable) -> {
-                    downloadDialog.setText("Extracting mvn.zip");
-                    logger.info("Extracting Maven binary zip");
-                    try (ZipFile zipFile = new ZipFile(file)) {
-                        zipFile.extractAll(DATA_FOLDER.getAbsolutePath());
-                    } catch (IOException e) {
-                        throw new RuntimeException("Could not extract Maven binary zip", e);
-                    }
-                }).whenComplete((file, throwable) -> {
-                    if(!file.delete()) {
-                        throw new RuntimeException("Could not delete " + file.getAbsolutePath());
-                    }
-                    if(!new File(DATA_FOLDER, "apache-maven-" + MAVEN_VERSION).renameTo(MAVEN_FOLDER)) {
-                        throw new RuntimeException("Could not rename " + new File(DATA_FOLDER, "apache-maven-" + MAVEN_VERSION).getAbsolutePath() + " to " + MAVEN_FOLDER.getAbsolutePath());
-                    }
-                }).whenComplete((file, throwable) -> {
-                    downloadDialog.dispose();
-                    logger.info("Done");
-                });
+        ProgressDialog progressDialog = new ProgressDialog("Downloading Maven");
+        new FileDownloader(String.format(BINARY_LINK, MAVEN_VERSION), MAVEN_ZIP_FILE).startDownload().thenAccept(file -> {
+
+            try (ZipFile zipFile = new ZipFile(file)) {
+                zipFile.extractAll(DATA_FOLDER.getAbsolutePath());
+            } catch (IOException e) {
+                throw new CompletionException("Could not extract Maven binary zip", e);
+            }
+
+            if (!file.delete()) {
+                throw new CompletionException(new IOException("Could not delete " + file.getAbsolutePath()));
+            }
+
+            if (!new File(DATA_FOLDER, "apache-maven-" + MAVEN_VERSION).renameTo(MAVEN_FOLDER)) {
+                throw new CompletionException(new IOException("Could not rename " + new File(DATA_FOLDER, "apache-maven-" + MAVEN_VERSION).getAbsolutePath() + " to " + MAVEN_FOLDER.getAbsolutePath()));
+            }
+
+            progressDialog.dispose();
+            logger.info("Done");
+        }).exceptionally(throwable -> {
+            logger.error("Could not download Maven", throwable);
+            progressDialog.setText("Error");
+            return null;
+        });
     }
 
-    private void createDataFolder() {;
-        if(!DATA_FOLDER.exists()) {
+    private void createDataFolder() {
+        ;
+        if (!DATA_FOLDER.exists()) {
             logger.debug("Creating data folder at " + DATA_FOLDER.getAbsolutePath());
-            if(!DATA_FOLDER.mkdirs()) {
+            if (!DATA_FOLDER.mkdirs()) {
                 throw new RuntimeException("Could not create data directory at " + DATA_FOLDER.getAbsolutePath());
             }
         } else {

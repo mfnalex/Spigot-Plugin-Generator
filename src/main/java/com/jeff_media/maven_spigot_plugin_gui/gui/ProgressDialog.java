@@ -3,13 +3,13 @@ package com.jeff_media.maven_spigot_plugin_gui.gui;
 import javax.swing.*;
 import java.awt.*;
 
-public class DownloadDialog {
+public class ProgressDialog {
 
     JLabel label = new JLabel();
     JProgressBar bar = new JProgressBar();
     JFrame frame = new JFrame("spigot-plugin-archetype");
 
-    public DownloadDialog(String text) {
+    public ProgressDialog(String text) {
 
         setText(text);
 
