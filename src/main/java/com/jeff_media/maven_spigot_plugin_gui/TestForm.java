@@ -3,6 +3,6 @@ package com.jeff_media.maven_spigot_plugin_gui;
 import javax.swing.*;
 
 public class TestForm {
-    private JTextField textField1;
-    private JTextField textField2;
+    private JTabbedPane tabbedPane1;
+    private JPanel panel1;
 }
