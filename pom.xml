@@ -51,6 +51,12 @@
             <version>23.0.0</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.0</version>
+            <scoep>compile</scoep>
+        </dependency>
     </dependencies>
 
 </project>

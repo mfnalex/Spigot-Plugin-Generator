@@ -1,5 +1,8 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.gui.Dialog;
 import com.jeff_media.maven_spigot_plugin_gui.gui.ProgressDialog;
@@ -7,8 +10,6 @@ import com.jeff_media.maven_spigot_plugin_gui.utils.ArchetypeMetadataParser;
 import com.jeff_media.maven_spigot_plugin_gui.utils.FileDownloader;
 import lombok.Getter;
 import net.lingala.zip4j.ZipFile;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -31,21 +32,21 @@ public class SpigotPluginGenerator {
     private static final String ARCHETYPE_LINK = "https://github.com/JEFF-Media-GbR/spigot-plugin-archetype/archive/refs/heads/master.zip";
     private static final File ARCHETYPE_FOLDER = new File(DATA_FOLDER, "archetype");
     private static final File ARCHETYPE_METADATA = new File(ARCHETYPE_FOLDER + "/src/main/resources/META-INF/maven/archetype-metadata.xml");
-    private static final Logger logger = LogManager.getLogger(SpigotPluginGenerator.class);
+    private static final Logger logger = new Logger(SpigotPluginGenerator.class);
 
     public SpigotPluginGenerator() throws ExecutionException, InterruptedException {
+        FlatLightLaf.setup();
         logger.info("Starting SpigotPluginGenerator");
 
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 UnsupportedLookAndFeelException e) {
+            UIManager.setLookAndFeel(new FlatDarculaLaf());
+        } catch (Exception e) {
             logger.warn("Could not set look and feel", e);
         }
 
         createDataFolder();
 
-        ProgressDialog progressDialog = new ProgressDialog("Downloading Maven");
+        ProgressDialog progressDialog = new ProgressDialog("Downloading Maven...");
         if(!isMavenInstalled()) {
             progressDialog.show();
             downloadAndExtract(progressDialog, String.format(BINARY_LINK, MAVEN_VERSION),MAVEN_ZIP_FILE, "apache-maven-" + MAVEN_VERSION, MAVEN_FOLDER);
@@ -58,6 +59,7 @@ public class SpigotPluginGenerator {
 
         if(!isArchetypeInstalled()){
             progressDialog.show();
+            progressDialog.setText("Downloading archetype...");
             downloadAndExtract(progressDialog, ARCHETYPE_LINK, new File(DATA_FOLDER, "archetype.zip"), "spigot-plugin-archetype-master", ARCHETYPE_FOLDER);
         }
 
@@ -80,7 +82,7 @@ public class SpigotPluginGenerator {
         }
 
         logger.debug("Maven is installed, showing Dialog");
-        javax.swing.SwingUtilities.invokeLater(Dialog::new);
+        javax.swing.SwingUtilities.invokeLater(() -> new Dialog(requiredProperties));
 
     }
 
@@ -101,7 +103,6 @@ public class SpigotPluginGenerator {
                 throw new CompletionException(new IOException("Could not rename " + new File(DATA_FOLDER, extractedName).getAbsolutePath() + " to " + renameTo.getAbsolutePath()));
             }
 
-            progressDialog.dispose();
             logger.info("Done");
         }).exceptionally(throwable -> {
             logger.error("Could not download or extract file: " + zipUrl, throwable);
