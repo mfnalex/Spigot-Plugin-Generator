@@ -11,6 +11,8 @@ public class ProgressDialog {
 
     public ProgressDialog(String text) {
 
+        frame.setLocationRelativeTo(null);
+
         setText(text);
 
         Container pane = frame.getContentPane();
@@ -30,7 +32,7 @@ public class ProgressDialog {
 
         c.gridy = 1;
         bar.setIndeterminate(true);
-        pane.add(bar);
+        pane.add(bar, c);
 
         frame.pack();
 

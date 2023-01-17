@@ -81,6 +81,8 @@ public class SpigotPluginGenerator {
             logger.error("Required property: " + requiredProperty);
         }
 
+        progressDialog.dispose();
+
         logger.debug("Maven is installed, showing Dialog");
         javax.swing.SwingUtilities.invokeLater(() -> new Dialog(requiredProperties));
 

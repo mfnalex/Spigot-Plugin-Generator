@@ -1,6 +1,7 @@
 package com.jeff_media.maven_spigot_plugin_gui.gui;
 
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
+import com.jeff_media.maven_spigot_plugin_gui.data.WrappedComponent;
 
 import java.awt.*;
 import java.util.LinkedHashMap;
@@ -22,29 +23,27 @@ public class Dialog {
 
     private static final int MARGIN = 2;
 
-    private final Map<RequiredProperty, Component> fields = new LinkedHashMap<>();
+    private final Map<RequiredProperty, WrappedComponent> fields = new LinkedHashMap<>();
 
 
-    private final GridBagConstraints generalPropertiesConstraints = new GridBagConstraints();
+    private final GridBagConstraints constraints = new GridBagConstraints();
     private final Container generalPropertiesPane = new JPanel();
 
-    private final GridBagConstraints dependenciesConstraints = new GridBagConstraints();
     private final Container dependenciesPane = new JPanel();
 
     //private final Container dependenciesPane;
 
-    public void initGeneralProperties(Container pane, List<RequiredProperty> properties) {
-        pane.setLayout(new GridBagLayout());
-        generalPropertiesConstraints.fill = GridBagConstraints.HORIZONTAL;
-        generalPropertiesConstraints.gridx = 0;
-        generalPropertiesConstraints.gridy = 0;
-        generalPropertiesConstraints.insets = new Insets(MARGIN, MARGIN, MARGIN, MARGIN);
+    public void fillPane(Container pane, List<RequiredProperty> properties) {
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.insets = new Insets(MARGIN, MARGIN, MARGIN, MARGIN);
 
 
         for(RequiredProperty property : properties) {
-            property.add(pane, generalPropertiesConstraints);
+            WrappedComponent component = property.add(pane, constraints);
+            fields.put(property, component);
         }
-
     }
 
     private static GridBagConstraints getConstraints(int x, int y, double weightx, double weighty) {
@@ -72,20 +71,35 @@ public class Dialog {
 
         JTabbedPane tabbedPane = new JTabbedPane();
 
+        // General Properties
         tabbedPane.addTab("General Properties", generalPropertiesPane);
-        initGeneralProperties(generalPropertiesPane, properties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()));
+        generalPropertiesPane.setLayout(new GridBagLayout());
+        fillPane(generalPropertiesPane, properties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()));
+        generalPropertiesPane.setMaximumSize(generalPropertiesPane.getPreferredSize());
 
-        tabbedPane.addTab("Dependencies", dependenciesPane);
-        initDependencies(dependenciesPane, properties.stream().filter(RequiredProperty::isDependency).collect(Collectors.toList()));
+        // Dependencies
+        JTable table = new DependencyTable(properties);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        TableColumnAdjuster tca = new TableColumnAdjuster(table);
+        tca.adjustColumns();
+        JScrollPane tableScrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        innerWindow.add(tabbedPane, getConstraints(0, 1, 1, 1));
+        tabbedPane.addTab("Dependencies", tableScrollPane);
+        //tabbedPane.addTab("Dependencies", dependenciesPane);
+        //dependenciesPane.setLayout(new GridBagLayout());
+        //dependenciesPane.setBackground(Color.WHITE);
+        //fillPane(dependenciesPane, properties.stream().filter(RequiredProperty::isDependency).collect(Collectors.toList()));
+
+        innerWindow.add(tabbedPane, getConstraints(0, 0, 1, 1));
+
+        innerWindow.add(new JButton("Create"), getConstraints(0, 1, 1, 0));
+
+        window.setLocationRelativeTo(null);
 
         window.pack();
         window.setVisible(true);
 
     }
 
-    private void initDependencies(Container pane, List<RequiredProperty> collect) {
-        pane.add(new JLabel("Test123"));
-    }
+
 }
