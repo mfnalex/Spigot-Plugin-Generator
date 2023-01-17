@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
 public class Main {
 
     public static void main(String[] args) throws ExecutionException, InterruptedException, ParserConfigurationException, IOException, SAXException {
-        //new SpigotPluginGenerator();
-        new ArchetypeMetadataParser(new File("C:\\Users\\mfnal\\IdeaProjects\\maven-spigot-plugin\\src\\main\\resources\\META-INF\\maven\\archetype-metadata.xml"));
+        new SpigotPluginGenerator();
+        //new ArchetypeMetadataParser(new File("C:\\Users\\mfnal\\IdeaProjects\\maven-spigot-plugin\\src\\main\\resources\\META-INF\\maven\\archetype-metadata.xml"));
     }
 }

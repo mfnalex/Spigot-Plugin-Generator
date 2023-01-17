@@ -33,8 +33,11 @@ public class ProgressDialog {
         pane.add(bar);
 
         frame.pack();
-        frame.setVisible(true);
 
+    }
+
+    public void show() {
+        frame.setVisible(true);
     }
 
     public void dispose() {

@@ -1,16 +1,21 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
+import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.gui.Dialog;
 import com.jeff_media.maven_spigot_plugin_gui.gui.ProgressDialog;
+import com.jeff_media.maven_spigot_plugin_gui.utils.ArchetypeMetadataParser;
 import com.jeff_media.maven_spigot_plugin_gui.utils.FileDownloader;
 import lombok.Getter;
 import net.lingala.zip4j.ZipFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
@@ -20,9 +25,12 @@ public class SpigotPluginGenerator {
     private static final File DATA_FOLDER = new File(System.getProperty("user.home"), ".maven-spigot-plugin-gui");
     private static final File MAVEN_ZIP_FILE = new File(DATA_FOLDER, "mvn.zip");
     private static final File MAVEN_FOLDER = new File(DATA_FOLDER, "mvn");
+    private static final File MAVEN_EXECUTALBE = new File(new File(MAVEN_FOLDER,"bin"), "mvn");
     private static final String MAVEN_VERSION = "3.8.7";
 
-    @Getter
+    private static final String ARCHETYPE_LINK = "https://github.com/JEFF-Media-GbR/spigot-plugin-archetype/archive/refs/heads/master.zip";
+    private static final File ARCHETYPE_FOLDER = new File(DATA_FOLDER, "archetype");
+    private static final File ARCHETYPE_METADATA = new File(ARCHETYPE_FOLDER + "/src/main/resources/META-INF/maven/archetype-metadata.xml");
     private static final Logger logger = LogManager.getLogger(SpigotPluginGenerator.class);
 
     public SpigotPluginGenerator() throws ExecutionException, InterruptedException {
@@ -37,32 +45,77 @@ public class SpigotPluginGenerator {
 
         createDataFolder();
 
-        javax.swing.SwingUtilities.invokeLater(() -> new Dialog());
-
         ProgressDialog progressDialog = new ProgressDialog("Downloading Maven");
-        new FileDownloader(String.format(BINARY_LINK, MAVEN_VERSION), MAVEN_ZIP_FILE).startDownload().thenAccept(file -> {
+        if(!isMavenInstalled()) {
+            progressDialog.show();
+            downloadAndExtract(progressDialog, String.format(BINARY_LINK, MAVEN_VERSION),MAVEN_ZIP_FILE, "apache-maven-" + MAVEN_VERSION, MAVEN_FOLDER);
+        }
+
+        if(!isMavenInstalled()){
+            logger.debug("Maven is not installed. Aborting.");
+            return;
+        }
+
+        if(!isArchetypeInstalled()){
+            progressDialog.show();
+            downloadAndExtract(progressDialog, ARCHETYPE_LINK, new File(DATA_FOLDER, "archetype.zip"), "spigot-plugin-archetype-master", ARCHETYPE_FOLDER);
+        }
+
+        if(!isArchetypeInstalled()) {
+            logger.debug("Archetype is not installed. Aborting.");
+            return;
+        }
+
+        ArchetypeMetadataParser parser;
+        try {
+             parser = new ArchetypeMetadataParser(ARCHETYPE_METADATA);
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<RequiredProperty> requiredProperties = parser.getRequiredProperties();
+
+        for(RequiredProperty requiredProperty : requiredProperties) {
+            logger.error("Required property: " + requiredProperty);
+        }
+
+        logger.debug("Maven is installed, showing Dialog");
+        javax.swing.SwingUtilities.invokeLater(Dialog::new);
+
+    }
+
+    private static void downloadAndExtract(ProgressDialog progressDialog, String zipUrl, File whereToSave, String extractedName, File renameTo) throws InterruptedException, ExecutionException {
+        new FileDownloader(zipUrl, whereToSave).startDownload().thenAccept(file -> {
 
             try (ZipFile zipFile = new ZipFile(file)) {
                 zipFile.extractAll(DATA_FOLDER.getAbsolutePath());
             } catch (IOException e) {
-                throw new CompletionException("Could not extract Maven binary zip", e);
+                throw new CompletionException("Could not extract zip file", e);
             }
 
             if (!file.delete()) {
                 throw new CompletionException(new IOException("Could not delete " + file.getAbsolutePath()));
             }
 
-            if (!new File(DATA_FOLDER, "apache-maven-" + MAVEN_VERSION).renameTo(MAVEN_FOLDER)) {
-                throw new CompletionException(new IOException("Could not rename " + new File(DATA_FOLDER, "apache-maven-" + MAVEN_VERSION).getAbsolutePath() + " to " + MAVEN_FOLDER.getAbsolutePath()));
+            if (!new File(DATA_FOLDER, extractedName).renameTo(renameTo)) {
+                throw new CompletionException(new IOException("Could not rename " + new File(DATA_FOLDER, extractedName).getAbsolutePath() + " to " + renameTo.getAbsolutePath()));
             }
 
             progressDialog.dispose();
             logger.info("Done");
         }).exceptionally(throwable -> {
-            logger.error("Could not download Maven", throwable);
+            logger.error("Could not download or extract file: " + zipUrl, throwable);
             progressDialog.setText("Error");
             return null;
-        });
+        }).get();
+    }
+
+    private boolean isArchetypeInstalled() {
+        return ARCHETYPE_METADATA.exists();
+    }
+
+    private boolean isMavenInstalled() {
+        return MAVEN_EXECUTALBE.exists();
     }
 
     private void createDataFolder() {
