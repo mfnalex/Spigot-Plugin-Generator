@@ -1,12 +1,14 @@
 package com.jeff_media.maven_spigot_plugin_gui.data;
 
 import com.jeff_media.maven_spigot_plugin_gui.Logger;
+import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import sun.security.provider.ConfigFile;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,7 +17,7 @@ import java.awt.*;
 @Data
 public class RequiredProperty {
 
-    private static final Logger logger = new Logger(RequiredProperty.class);
+    private static final Logger LOGGER = new Logger(RequiredProperty.class);
 
     @NonNull private final String key;
     @Nullable private final String name;
@@ -48,7 +50,7 @@ public class RequiredProperty {
         boolean separatorValue;
 
         if (key == null) {
-            logger.error("Found <requiredProperty> without attribute \"key\": " + node.getTextContent());
+            LOGGER.error("Found <requiredProperty> without attribute \"key\": " + node.getTextContent());
             return null;
         }
 
@@ -56,20 +58,21 @@ public class RequiredProperty {
 
         if (name == null) {
             nameValue = keyValue;
+            LOGGER.warn("Found <requiredProperty> without attribute \"name\", using key as name: " + keyValue);
         } else {
             nameValue = name.getTextContent();
         }
 
         if (type == null) {
-            logger.debug("Found <requiredProperty> without attribute \"type\": " + node.getTextContent());
-            return null;
+            LOGGER.warn("Found <requiredProperty> without attribute \"type\", using \"text\" as type: " + keyValue);
+            typeValue = InputType.TEXT;
+        } else {
+            typeValue = InputType.fromString(type.getTextContent());
         }
 
         String descriptionValue = description == null ? null : description.getTextContent();
         String urlValue = url == null ? null : url.getTextContent();
 
-
-        typeValue = InputType.fromString(type.getTextContent());
         separatorValue = separator != null && Boolean.parseBoolean(separator.getTextContent());
         return new RequiredProperty(keyValue, nameValue, typeValue, separatorValue, defaultValue, descriptionValue, urlValue);
     }

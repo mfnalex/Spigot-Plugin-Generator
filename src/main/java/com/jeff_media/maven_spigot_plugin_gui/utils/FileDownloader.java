@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class FileDownloader {
 
-    private static final Logger logger = new Logger(FileDownloader.class);
+    private static final Logger LOGGER = new Logger(FileDownloader.class);
 
     private final String url;
     private final File file;
@@ -24,7 +24,7 @@ public class FileDownloader {
     }
 
     public CompletableFuture<File> startDownload() {
-        logger.debug("FileDownloader: Starting download of " + url + " to " + file.getAbsolutePath());
+        LOGGER.debug("FileDownloader: Starting download of " + url + " to " + file.getAbsolutePath());
         return CompletableFuture.supplyAsync(() -> {
             try (BufferedInputStream in = new BufferedInputStream(new URL(url).openStream()); FileOutputStream fileOutputStream = new FileOutputStream(file)) {
                 byte[] dataBuffer = new byte[1024];

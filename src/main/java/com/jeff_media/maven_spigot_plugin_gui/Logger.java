@@ -1,5 +1,7 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
+import com.jeff_media.maven_spigot_plugin_gui.gui.NewDialog;
+
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
@@ -18,6 +20,7 @@ public class Logger {
 
     public void info(String message) {
         System.out.println(className + INFO + message);
+        NewDialog.getLogTextArea().append(INFO + message + "\n");
     }
 
     public void info(String message, Throwable t) {
@@ -26,7 +29,8 @@ public class Logger {
     }
 
     public void error(String message) {
-        System.out.println(className + ERROR + message);
+        System.err.println(className + ERROR + message);
+        NewDialog.getLogTextArea().append(ERROR + message + "\n");
     }
 
     public void error(String message, Throwable t) {
@@ -35,7 +39,8 @@ public class Logger {
     }
 
     public void warn(String message) {
-        System.out.println(className + WARNING + message);
+        System.err.println(className + WARNING + message);
+        NewDialog.getLogTextArea().append(WARNING + message + "\n");
     }
 
     public void warn(String message, Throwable t) {

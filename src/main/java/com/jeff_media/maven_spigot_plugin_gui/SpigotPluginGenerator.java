@@ -5,15 +5,18 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.gui.Dialog;
 import com.jeff_media.maven_spigot_plugin_gui.gui.NewDialog;
+import com.jeff_media.maven_spigot_plugin_gui.gui.StatusWindow;
 import com.jeff_media.maven_spigot_plugin_gui.utils.ArchetypeMetadataParser;
 import com.jeff_media.maven_spigot_plugin_gui.utils.FileDownloader;
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.io.FileUtils;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -30,42 +33,42 @@ public class SpigotPluginGenerator {
     private static final String ARCHETYPE_LINK = "https://github.com/JEFF-Media-GbR/spigot-plugin-archetype/archive/refs/heads/master.zip";
     private static final File ARCHETYPE_FOLDER = new File(DATA_FOLDER, "archetype");
     private static final File ARCHETYPE_METADATA = new File(ARCHETYPE_FOLDER + "/src/main/resources/META-INF/maven/archetype-metadata.xml");
-    private static final Logger logger = new Logger(SpigotPluginGenerator.class);
+    private static final Logger LOGGER = new Logger(SpigotPluginGenerator.class);
 
     public SpigotPluginGenerator() throws ExecutionException, InterruptedException {
         FlatLightLaf.setup();
-        logger.info("Starting SpigotPluginGenerator");
+        LOGGER.info("Starting SpigotPluginGenerator");
 
         try {
             UIManager.setLookAndFeel(new FlatDarculaLaf());
         } catch (Exception e) {
-            logger.warn("Could not set look and feel", e);
+            LOGGER.warn("Could not set look and feel", e);
         }
 
         createDataFolder();
 
         if (!isMavenInstalled()) {
-            logger.info("Downloading Maven...");
-            downloadAndExtract(String.format(BINARY_LINK, MAVEN_VERSION), MAVEN_ZIP_FILE, "apache-maven-" + MAVEN_VERSION, MAVEN_FOLDER);
-            logger.info("Download complete.");
+            downloadMaven();
         } else {
-            logger.info("Maven is already installed");
+            LOGGER.info("Maven is already installed");
         }
 
 
         if (!isArchetypeInstalled()) {
-            logger.info("Downloading archetype...");
+            StatusWindow.createAndShow("Downloading Archetype...");
+            LOGGER.info("Downloading archetype...");
             downloadAndExtract(ARCHETYPE_LINK, new File(DATA_FOLDER, "archetype.zip"), "spigot-plugin-archetype-master", ARCHETYPE_FOLDER);
-            logger.info("Download complete.");
+            LOGGER.info("Download complete.");
         } else {
-            logger.info("Archetype is already installed");
+            LOGGER.info("Archetype is already installed");
         }
 
         ArchetypeMetadataParser parser;
         try {
-            logger.info("Parsing archetype metadata...");
+            StatusWindow.createAndShow("Parsing archetype metadata...");
+            LOGGER.info("Parsing archetype metadata...");
             parser = new ArchetypeMetadataParser(ARCHETYPE_METADATA);
-            logger.info("Parsing complete.");
+            LOGGER.info("Parsing complete.");
         } catch (ParserConfigurationException | IOException | SAXException e) {
             throw new RuntimeException(e);
         }
@@ -73,22 +76,46 @@ public class SpigotPluginGenerator {
         List<RequiredProperty> requiredProperties = parser.getRequiredProperties();
 
         for (RequiredProperty requiredProperty : requiredProperties) {
-            logger.error("Found property: " + requiredProperty);
+            LOGGER.debug("Found property: " + requiredProperty);
         }
 
-        javax.swing.SwingUtilities.invokeLater(() -> new NewDialog(requiredProperties));
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            StatusWindow.disappear();
+            new NewDialog(requiredProperties);
+        });
 
+    }
+
+    public static void removeMaven() {
+        LOGGER.info("Removing Maven");
+        try {
+            FileUtils.deleteDirectory(MAVEN_FOLDER);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        LOGGER.info("Maven removed");
+    }
+
+    public static void downloadMaven() {
+        StatusWindow.createAndShow("Downloading Maven...");
+        LOGGER.info("Downloading Maven...");
+        try {
+            downloadAndExtract(String.format(BINARY_LINK, MAVEN_VERSION), MAVEN_ZIP_FILE, "apache-maven-" + MAVEN_VERSION, MAVEN_FOLDER);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        LOGGER.info("Download complete.");
     }
 
     private void createDataFolder() {
         ;
         if (!DATA_FOLDER.exists()) {
-            logger.debug("Creating data folder at " + DATA_FOLDER.getAbsolutePath());
+            LOGGER.debug("Creating data folder at " + DATA_FOLDER.getAbsolutePath());
             if (!DATA_FOLDER.mkdirs()) {
                 throw new RuntimeException("Could not create data directory at " + DATA_FOLDER.getAbsolutePath());
             }
         } else {
-            logger.debug("Data folder already exists");
+            LOGGER.debug("Data folder already exists");
         }
     }
 
@@ -113,9 +140,9 @@ public class SpigotPluginGenerator {
                 throw new CompletionException(new IOException("Could not rename " + new File(DATA_FOLDER, extractedName).getAbsolutePath() + " to " + renameTo.getAbsolutePath()));
             }
 
-            logger.info("Done");
+            LOGGER.info("Done");
         }).exceptionally(throwable -> {
-            logger.error("Could not download or extract file: " + zipUrl, throwable);
+            LOGGER.error("Could not download or extract file: " + zipUrl, throwable);
             return null;
         }).get();
     }
