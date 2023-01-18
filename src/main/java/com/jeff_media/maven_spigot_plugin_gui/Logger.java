@@ -26,7 +26,7 @@ public class Logger {
     }
 
     public void error(String message) {
-        System.out.println(className + ERROR + message);
+        System.err.println(className + ERROR + message);
     }
 
     public void error(String message, Throwable t) {
@@ -35,7 +35,7 @@ public class Logger {
     }
 
     public void warn(String message) {
-        System.out.println(className + WARNING + message);
+        System.err.println(className + WARNING + message);
     }
 
     public void warn(String message, Throwable t) {

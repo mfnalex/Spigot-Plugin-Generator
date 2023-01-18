@@ -40,6 +40,7 @@ public class ProgressDialog {
 
     public void show() {
         frame.setVisible(true);
+        frame.toFront();
     }
 
     public void dispose() {

@@ -2,6 +2,7 @@ package com.jeff_media.maven_spigot_plugin_gui.gui;
 
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.data.WrappedComponent;
+import javafx.scene.layout.AnchorPane;
 
 import java.awt.*;
 import java.util.LinkedHashMap;
@@ -28,10 +29,6 @@ public class Dialog {
 
     private final GridBagConstraints constraints = new GridBagConstraints();
     private final Container generalPropertiesPane = new JPanel();
-
-    private final Container dependenciesPane = new JPanel();
-
-    //private final Container dependenciesPane;
 
     public void fillPane(Container pane, List<RequiredProperty> properties) {
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -63,7 +60,8 @@ public class Dialog {
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setMinimumSize(new Dimension(300,200));
         JPanel innerWindow = new JPanel();
-        innerWindow.setLayout(new GridBagLayout());
+        GridBagLayout layout = new GridBagLayout();
+        innerWindow.setLayout(layout);
         Border padding = BorderFactory.createEmptyBorder(5, 5, 5, 5);
         innerWindow.setBorder(padding);
         window.setContentPane(innerWindow);
@@ -72,10 +70,11 @@ public class Dialog {
         JTabbedPane tabbedPane = new JTabbedPane();
 
         // General Properties
-        tabbedPane.addTab("General Properties", generalPropertiesPane);
         generalPropertiesPane.setLayout(new GridBagLayout());
         fillPane(generalPropertiesPane, properties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()));
         generalPropertiesPane.setMaximumSize(generalPropertiesPane.getPreferredSize());
+        JScrollPane generalPropertiesScrollPane = new JScrollPane(generalPropertiesPane, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        tabbedPane.addTab("Properties", generalPropertiesScrollPane);
 
         // Dependencies
         JTable table = new DependencyTable(properties);
@@ -92,7 +91,7 @@ public class Dialog {
 
         innerWindow.add(tabbedPane, getConstraints(0, 0, 1, 1));
 
-        innerWindow.add(new JButton("Create"), getConstraints(0, 1, 1, 0));
+        innerWindow.add(new JButton("Create"), getConstraints(0, 1, 0, 0));
 
         window.setLocationRelativeTo(null);
 

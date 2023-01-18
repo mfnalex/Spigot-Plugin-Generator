@@ -1,7 +1,9 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
 import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatPropertiesLaf;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.gui.Dialog;
@@ -39,7 +41,7 @@ public class SpigotPluginGenerator {
         logger.info("Starting SpigotPluginGenerator");
 
         try {
-            UIManager.setLookAndFeel(new FlatDarculaLaf());
+            UIManager.setLookAndFeel(new FlatMacDarkLaf());
         } catch (Exception e) {
             logger.warn("Could not set look and feel", e);
         }
@@ -78,7 +80,7 @@ public class SpigotPluginGenerator {
         List<RequiredProperty> requiredProperties = parser.getRequiredProperties();
 
         for(RequiredProperty requiredProperty : requiredProperties) {
-            logger.error("Required property: " + requiredProperty);
+            logger.debug("Found requiredProperty: " + requiredProperty);
         }
 
         progressDialog.dispose();
