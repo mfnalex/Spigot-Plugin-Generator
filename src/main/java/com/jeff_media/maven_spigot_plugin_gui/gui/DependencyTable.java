@@ -3,6 +3,7 @@ package com.jeff_media.maven_spigot_plugin_gui.gui;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 
 import javax.swing.*;
+import javax.swing.table.JTableHeader;
 import javax.swing.text.TableView;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +13,9 @@ class DependencyTable extends JTable {
     private final List<RequiredProperty> properties;
 
     public DependencyTable(List<RequiredProperty> properties) {
-        super(properties.stream().filter(RequiredProperty::isDependency).map(RequiredProperty::asTableRow).toArray(Object[][]::new), new String[]{"Enabled", "Name", "Description"});
+        super(properties.stream().map(RequiredProperty::asTableRow).toArray(Object[][]::new), new String[]{"Enabled", "Name", "Description"});
         this.properties = properties;
+        this.setTableHeader(new JTableHeader(this.columnModel));
     }
 
     @Override
