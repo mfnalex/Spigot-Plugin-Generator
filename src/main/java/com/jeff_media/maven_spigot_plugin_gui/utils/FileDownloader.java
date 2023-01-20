@@ -1,7 +1,7 @@
 package com.jeff_media.maven_spigot_plugin_gui.utils;
 
-import com.jeff_media.maven_spigot_plugin_gui.Logger;
-import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -11,9 +11,8 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 public class FileDownloader {
-
-    private static final Logger LOGGER = new Logger(FileDownloader.class);
 
     private final String url;
     private final File file;
@@ -24,7 +23,7 @@ public class FileDownloader {
     }
 
     public CompletableFuture<File> startDownload() {
-        LOGGER.debug("FileDownloader: Starting download of " + url + " to " + file.getAbsolutePath());
+        log.debug("FileDownloader: Starting download of " + url + " to " + file.getAbsolutePath());
         return CompletableFuture.supplyAsync(() -> {
             try (BufferedInputStream in = new BufferedInputStream(new URL(url).openStream()); FileOutputStream fileOutputStream = new FileOutputStream(file)) {
                 byte[] dataBuffer = new byte[1024];

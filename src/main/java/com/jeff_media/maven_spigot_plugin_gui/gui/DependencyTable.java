@@ -1,20 +1,26 @@
 package com.jeff_media.maven_spigot_plugin_gui.gui;
 
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
+import com.jeff_media.maven_spigot_plugin_gui.data.WrappedComponent;
+import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.text.TableView;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-class DependencyTable extends JTable {
+public class DependencyTable extends JTable {
 
-    private final List<RequiredProperty> properties;
+    @Getter private final List<RequiredProperty> properties;
 
-    public DependencyTable(List<RequiredProperty> properties) {
-        super(properties.stream().map(RequiredProperty::asTableRow).toArray(Object[][]::new), new String[]{"Enabled", "Name", "Description"});
-        this.properties = properties;
+    public DependencyTable(MainMenu menu, List<RequiredProperty> properties) {
+        super(properties.stream().sorted(RequiredProperty.COMPARATOR_BY_KEY).map(RequiredProperty::asTableRow).toArray(Object[][]::new), new String[]{"Enabled", "Name", "Description"});
+        this.properties = properties.stream().sorted(RequiredProperty.COMPARATOR_BY_KEY).collect(Collectors.toList());
         this.setTableHeader(new JTableHeader(this.columnModel));
     }
 
@@ -38,5 +44,13 @@ class DependencyTable extends JTable {
             }
         }
         return selectedDependencies;
+    }
+
+    public Map<RequiredProperty, WrappedComponent> getDependencies() {
+        Map map = new HashMap();
+        for(RequiredProperty property : properties) {
+            map.put(property, new WrappedComponent((boolean) getModel().getValueAt(properties.indexOf(property), 0)));
+        }
+        return map;
     }
 }

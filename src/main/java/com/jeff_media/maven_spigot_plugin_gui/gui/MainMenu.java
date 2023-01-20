@@ -4,10 +4,11 @@ package com.jeff_media.maven_spigot_plugin_gui.gui;
 import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.data.WrappedComponent;
-import com.sun.org.slf4j.internal.Logger;
-import com.sun.org.slf4j.internal.LoggerFactory;
+import com.jeff_media.maven_spigot_plugin_gui.utils.MavenArchetypeGenerateInvoker;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -17,9 +18,9 @@ import java.awt.*;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class NewDialog extends JFrame {
+@Slf4j
+public class MainMenu extends JFrame {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NewDialog.class);
     private static final Dimension MINIMUM_WINDOW_SIZE = new Dimension(300, 200);
     private static final int MARGIN = 2;
     private static final int BORDER_MARGIN = 5;
@@ -31,19 +32,23 @@ public class NewDialog extends JFrame {
     private final Container aboutTab;
     private final JButton downloadMavenButton = new JButton("Update Maven");
     private final JButton downloadArchetypeButton = new JButton("Update Archetype");
+    private final JProgressBar progressBar = new JProgressBar();
+    private final JButton generateButton = new JButton("Generate");
+    private final SpigotPluginGenerator main;
 
     private JLabel fileOutputLabel = new JLabel("<choose a directory>\nasdasdasd<br>adsasdasdasdad");
-    @Getter private static JTextArea logTextArea = new JTextArea();
-    private JTable dependencyTable;
+    @Getter private static JTextPane logTextArea = new JTextPane();
+    @Getter private DependencyTable dependencyTable;
 
-    private final Map<RequiredProperty, WrappedComponent> fields = new LinkedHashMap<>();
+    @Getter private final Map<RequiredProperty, WrappedComponent> fields = new LinkedHashMap<>();
 
     private final JTabbedPane tabbedPane;
 
     private final List<RequiredProperty> allProperties;
 
-    public NewDialog(List<RequiredProperty> allProperties) {
+    public MainMenu(SpigotPluginGenerator spigotPluginGenerator, List<RequiredProperty> allProperties) {
         super("Spigot Plugin Creator");
+        this.main = spigotPluginGenerator;
         this.allProperties = allProperties;
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setMinimumSize(MINIMUM_WINDOW_SIZE);
@@ -51,7 +56,10 @@ public class NewDialog extends JFrame {
         // Setup TabbedPane
         this.tabbedPane = new JTabbedPane();
         //this.tabbedPane.setBorder(BORDER);
-        this.setContentPane(tabbedPane);
+        JPanel borderLayout = new JPanel(new BorderLayout());
+        //this.setContentPane(tabbedPane);
+        this.setContentPane(borderLayout);
+        borderLayout.add(tabbedPane, BorderLayout.CENTER);
 
         // First tab: Properties
         mainTab = createMainTab();
@@ -67,15 +75,21 @@ public class NewDialog extends JFrame {
 
         generateTab.setPreferredSize(mainTab.getPreferredSize());
 
+        //borderLayout.add(progressBar, BorderLayout.NORTH);
+        progressBar.setIndeterminate(true);
+        progressBar.setString("Downloading Maven...");
+        progressBar.setStringPainted(true);
+
         pack();
+        setLocationRelativeTo(null);
         setVisible(true);
     }
+
 
     private void registerAboutButtons() {
         downloadMavenButton.addActionListener(e -> {
             SpigotPluginGenerator.removeMaven();
             SpigotPluginGenerator.downloadMaven();
-            StatusWindow.disappear();
         });
     }
 
@@ -91,20 +105,45 @@ public class NewDialog extends JFrame {
     private Container createGenerateTab() {
         JPanel panel = new JPanel(new BorderLayout());
         JPanel upperPanel = new JPanel(new GridBagLayout());
-        upperPanel.add(new JButton("Generate"), getConstraints(0, 0, 1, 1));
+        upperPanel.add(generateButton, getConstraints(0, 0, 1, 1));
         panel.add(upperPanel, BorderLayout.NORTH);
+
+        generateButton.addActionListener(e -> {
+
+            DirectoryChooser chooser = new DirectoryChooser();
+            int result = chooser.showOpenDialog(null);
+            if(result != JFileChooser.APPROVE_OPTION) return;
+            File outputDirectory = chooser.getSelectedFile();
+            log.info("Output directory: " + outputDirectory.getAbsolutePath());
+
+            MavenArchetypeGenerateInvoker invoker = main.createMavenArchetypeGenerateInvoker(outputDirectory);
+            List<String> command = invoker.getMavenCommand();
+            log.info("Command: " + command);
+            invoker.runMaven();
+            //logTextArea.getDocument()("Command: " + command.stream().collect(Collectors.joining(" \\\n\t")) + "\n");
+            //System.out.println("");
+//            fields.forEach((requiredProperty, wrappedComponent) -> {
+//                log.info(requiredProperty + ": " + wrappedComponent.getValue());
+//                logTextArea.append(requiredProperty + ": " + wrappedComponent.getValue() + "\n");
+//            });
+
+        });
+
 
         JScrollPane logScrollPane = new JScrollPane();
         logTextArea.setEditable(false);
-        logTextArea.setLineWrap(false);
-        logTextArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        //logTextArea.setLineWrap(false);
+//        doc = (StyledDocument) logTextArea.getDocument();
+//        style = doc.addStyle("ConsoleStyle", null);
         logScrollPane.setViewportView(logTextArea);
         panel.add(logScrollPane, BorderLayout.CENTER);
+
+
         return panel;
     }
 
     private Container createDependencyTab() {
-        dependencyTable = new DependencyTable(allProperties.stream().filter(RequiredProperty::isDependency).collect(Collectors.toList()));
+        dependencyTable = new DependencyTable(this, allProperties.stream().filter(RequiredProperty::isDependency).collect(Collectors.toList()));
         dependencyTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         dependencyTable.setBorder(EMPTY_BORDER);
         TableColumnAdjuster tca = new TableColumnAdjuster(dependencyTable);
@@ -135,6 +174,7 @@ public class NewDialog extends JFrame {
 
         for(RequiredProperty property : properties) {
             WrappedComponent component = property.add(pane, constraints);
+            System.out.println("Adding to fields: " + property.getKey() + " -> " + component);
             fields.put(property, component);
         }
     }
