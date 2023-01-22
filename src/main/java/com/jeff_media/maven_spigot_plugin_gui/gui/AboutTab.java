@@ -16,7 +16,7 @@ import java.net.URISyntaxException;
 public class AboutTab extends JPanel {
 
     private final JLabel textPane = new JLabel();
-    private static final String GITHUB_URL = "https://github.com/mfnalex/maven-spigot-plugin-gui/";
+    private static final String GITHUB_URL = "https://github.com/JEFF-Media-GbR/Spigot-Plugin-Generator/";
     String html = "<html><body style='width: 200px'>";;
     String br = "<br>";
 

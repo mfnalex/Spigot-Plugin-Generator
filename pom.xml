@@ -36,20 +36,6 @@
                 </executions>
                 <configuration>
                     <minimizeJar>false</minimizeJar>
-<!--                    <filters>-->
-<!--                        <filter>-->
-<!--                            <artifact>*:*</artifact>-->
-<!--                            <excludes>-->
-<!--                                <exclude>META-INF/**</exclude>-->
-<!--                            </excludes>-->
-<!--                        </filter>-->
-<!--                        <filter>-->
-<!--                            <artifact>com.jeff_media:maven-spigot-plugin-gui</artifact>-->
-<!--                            <includes>-->
-<!--                                <include>META-INF/**</include>-->
-<!--                            </includes>-->
-<!--                        </filter>-->
-<!--                    </filters>-->
                 </configuration>
             </plugin>
             <plugin>
@@ -63,6 +49,7 @@
                             <mainClass>com.jeff_media.maven_spigot_plugin_gui.Main</mainClass>
                         </manifest>
                     </archive>
+                    <finalName>SpigotPluginGenerator-${project.version}</finalName>
                 </configuration>
             </plugin>
         </plugins>

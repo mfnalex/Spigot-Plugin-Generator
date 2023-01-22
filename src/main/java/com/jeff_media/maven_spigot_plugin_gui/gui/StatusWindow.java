@@ -2,12 +2,14 @@ package com.jeff_media.maven_spigot_plugin_gui.gui;
 
 import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
 
+@Slf4j
 public class StatusWindow extends JFrame {
 
     JProgressBar bar;
@@ -22,7 +24,7 @@ public class StatusWindow extends JFrame {
         setContentPane(panel);
         bar.setIndeterminate(true);
         bar.setStringPainted(true);
-        bar.setString(text);
+
 
         logArea.setEditable(false);
         logArea.setLineWrap(false);
@@ -32,7 +34,7 @@ public class StatusWindow extends JFrame {
         DefaultCaret caret = (DefaultCaret) logArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-        logArea.append(text + "\n");
+
 
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setViewportView(logArea);
@@ -43,10 +45,13 @@ public class StatusWindow extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
+
+        setText(text);
     }
 
     public void setText(String text) {
         bar.setString(text);
         logArea.append(text+"\n");
+        log.info(text);
     }
 }
