@@ -1,6 +1,7 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
 
+import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import lombok.extern.slf4j.Slf4j;
