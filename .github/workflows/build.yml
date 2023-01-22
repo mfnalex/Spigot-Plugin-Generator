@@ -1,6 +1,8 @@
 name: Java CI
 
-on: [push]
+on:
+  push:
+    branches: [ master ]
 
 jobs:
   build:
@@ -15,3 +17,13 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots package
+      - name: Copy artifact to release folder
+        run: |
+          mkdir release
+          cd target
+            cp target/SpigotPluginGenerator-*.jar ../release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: assets-for-download
+          path: release
