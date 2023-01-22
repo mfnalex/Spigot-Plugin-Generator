@@ -25,8 +25,7 @@ public class TableColumnAdjuster {
     private void adjustColumn(final int column) {
         TableColumn tableColumn = table.getColumnModel().getColumn(column);
 
-        if (!tableColumn.getResizable())
-            return;
+        if (!tableColumn.getResizable()) return;
 
         int columnHeaderWidth = getColumnHeaderWidth(column);
         int columnDataWidth = getColumnDataWidth(column);
@@ -41,11 +40,9 @@ public class TableColumnAdjuster {
         Object value = tableColumn.getHeaderValue();
         TableCellRenderer renderer = tableColumn.getHeaderRenderer();
 
-        if (renderer == null)
-            renderer = table.getTableHeader().getDefaultRenderer();
+        if (renderer == null) renderer = table.getTableHeader().getDefaultRenderer();
 
-        Component c = renderer.getTableCellRendererComponent(table, value,
-                false, false, -1, column);
+        Component c = renderer.getTableCellRendererComponent(table, value, false, false, -1, column);
         return c.getPreferredSize().width;
     }
 
@@ -53,31 +50,25 @@ public class TableColumnAdjuster {
         int preferredWidth = 0;
 
         for (int row = 0; row < table.getRowCount(); row++)
-            preferredWidth = Math.max(preferredWidth,
-                    getCellDataWidth(row, column));
+            preferredWidth = Math.max(preferredWidth, getCellDataWidth(row, column));
 
         return preferredWidth;
+    }
+
+    private void updateTableColumn(int column, int width) {
+        final TableColumn tableColumn = table.getColumnModel().getColumn(column);
+
+        if (!tableColumn.getResizable()) return;
+
+        table.getTableHeader().setResizingColumn(tableColumn);
+        tableColumn.setWidth(width + SPACING);
     }
 
     private int getCellDataWidth(int row, int column) {
         TableCellRenderer cellRenderer = table.getCellRenderer(row, column);
         Object value = table.getValueAt(row, column);
-        Component c = cellRenderer.getTableCellRendererComponent(table, value,
-                false, false, row, column);
-        int width = c.getPreferredSize().width
-                + table.getIntercellSpacing().width;
+        Component c = cellRenderer.getTableCellRendererComponent(table, value, false, false, row, column);
 
-        return width;
-    }
-
-    private void updateTableColumn(int column, int width) {
-        final TableColumn tableColumn = table.getColumnModel()
-                .getColumn(column);
-
-        if (!tableColumn.getResizable())
-            return;
-
-        table.getTableHeader().setResizingColumn(tableColumn);
-        tableColumn.setWidth(width + SPACING);
+        return c.getPreferredSize().width + table.getIntercellSpacing().width;
     }
 }

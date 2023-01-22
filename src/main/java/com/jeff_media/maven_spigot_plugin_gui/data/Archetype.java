@@ -10,4 +10,8 @@ public class Archetype {
     private final String version;
     private final String repository;
 
+    public String getFullIdentifier() {
+        return groupId + ":" + artifactId + ":" + version;
+    }
+
 }

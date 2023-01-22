@@ -4,17 +4,20 @@ package com.jeff_media.maven_spigot_plugin_gui.gui;
 import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.data.WrappedComponent;
+import com.jeff_media.maven_spigot_plugin_gui.utils.Constraints;
+import com.jeff_media.maven_spigot_plugin_gui.utils.MapCombiner;
 import com.jeff_media.maven_spigot_plugin_gui.utils.MavenArchetypeGenerateInvoker;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.util.LinkedHashMap;
-import java.util.List;
-
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.text.DefaultCaret;
 import java.awt.*;
+import java.io.File;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,8 @@ public class MainMenu extends JFrame {
     private static final int BORDER_MARGIN = 5;
     private static final Border BORDER = BorderFactory.createEmptyBorder(BORDER_MARGIN, BORDER_MARGIN, BORDER_MARGIN, BORDER_MARGIN);
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
+    @Getter
+
     private final Container mainTab;
     private final Container dependencyTab;
     private final Container generateTab;
@@ -35,19 +40,17 @@ public class MainMenu extends JFrame {
     private final JProgressBar progressBar = new JProgressBar();
     private final JButton generateButton = new JButton("Generate");
     private final SpigotPluginGenerator main;
-
-    private JLabel fileOutputLabel = new JLabel("<choose a directory>\nasdasdasd<br>adsasdasdasdad");
-    @Getter private static JTextPane logTextArea = new JTextPane();
-    @Getter private DependencyTable dependencyTable;
-
-    @Getter private final Map<RequiredProperty, WrappedComponent> fields = new LinkedHashMap<>();
-
+    @Getter
+    private final Map<RequiredProperty, WrappedComponent> fields = new LinkedHashMap<>();
     private final JTabbedPane tabbedPane;
-
     private final List<RequiredProperty> allProperties;
+    private final JLabel fileOutputLabel = new JLabel("<choose a directory>\nasdasdasd<br>adsasdasdasdad");
+    @Getter
+    private DependencyTable dependencyTable;
 
     public MainMenu(SpigotPluginGenerator spigotPluginGenerator, List<RequiredProperty> allProperties) {
         super("Spigot Plugin Creator");
+
         this.main = spigotPluginGenerator;
         this.allProperties = allProperties;
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -66,9 +69,9 @@ public class MainMenu extends JFrame {
         tabbedPane.addTab("Properties", mainTab);
         dependencyTab = createDependencyTab();
         tabbedPane.addTab("Dependencies", dependencyTab);
-        generateTab = createGenerateTab();
+        generateTab = new GenerateTab(main, this);
         tabbedPane.addTab("Generate", generateTab);
-        aboutTab = createAboutTab();
+        aboutTab = wrapIntoScrollPane(new AboutTab(main));
         tabbedPane.addTab("About", aboutTab);
 
         registerAboutButtons();
@@ -85,61 +88,10 @@ public class MainMenu extends JFrame {
         setVisible(true);
     }
 
-
-    private void registerAboutButtons() {
-        downloadMavenButton.addActionListener(e -> {
-            SpigotPluginGenerator.removeMaven();
-            SpigotPluginGenerator.downloadMaven();
-        });
-    }
-
-    private Container createAboutTab() {
+    private Container createMainTab() {
         JPanel panel = new JPanel(new GridBagLayout());
-
-        panel.add(downloadMavenButton, getConstraints(0, 0, 0.5, 1));
-        panel.add(downloadArchetypeButton, getConstraints(1, 0, 0.5, 1));
-
+        fillPane(panel, allProperties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()), newConstraints());
         return wrapIntoScrollPane(panel);
-    }
-
-    private Container createGenerateTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        JPanel upperPanel = new JPanel(new GridBagLayout());
-        upperPanel.add(generateButton, getConstraints(0, 0, 1, 1));
-        panel.add(upperPanel, BorderLayout.NORTH);
-
-        generateButton.addActionListener(e -> {
-
-            DirectoryChooser chooser = new DirectoryChooser();
-            int result = chooser.showOpenDialog(null);
-            if(result != JFileChooser.APPROVE_OPTION) return;
-            File outputDirectory = chooser.getSelectedFile();
-            log.info("Output directory: " + outputDirectory.getAbsolutePath());
-
-            MavenArchetypeGenerateInvoker invoker = main.createMavenArchetypeGenerateInvoker(outputDirectory);
-            List<String> command = invoker.getMavenCommand();
-            log.info("Command: " + command);
-            invoker.runMaven();
-            //logTextArea.getDocument()("Command: " + command.stream().collect(Collectors.joining(" \\\n\t")) + "\n");
-            //System.out.println("");
-//            fields.forEach((requiredProperty, wrappedComponent) -> {
-//                log.info(requiredProperty + ": " + wrappedComponent.getValue());
-//                logTextArea.append(requiredProperty + ": " + wrappedComponent.getValue() + "\n");
-//            });
-
-        });
-
-
-        JScrollPane logScrollPane = new JScrollPane();
-        logTextArea.setEditable(false);
-        //logTextArea.setLineWrap(false);
-//        doc = (StyledDocument) logTextArea.getDocument();
-//        style = doc.addStyle("ConsoleStyle", null);
-        logScrollPane.setViewportView(logTextArea);
-        panel.add(logScrollPane, BorderLayout.CENTER);
-
-
-        return panel;
     }
 
     private Container createDependencyTab() {
@@ -153,18 +105,11 @@ public class MainMenu extends JFrame {
         return new JScrollPane(dependencyTable);
     }
 
-    private Container createMainTab() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        fillPane(panel, allProperties.stream().filter(RequiredProperty::isGeneralProperty).collect(Collectors.toList()), newConstraints());
-        return wrapIntoScrollPane(panel);
-    }
-
-    private JScrollPane wrapIntoScrollPane(Component panel) {
-        JPanel outerPanel = new JPanel(new BorderLayout());
-        outerPanel.add(panel, BorderLayout.NORTH);
-        JScrollPane scrollPane = new JScrollPane(outerPanel);
-        scrollPane.setBorder(BORDER);
-        return scrollPane;
+    private void registerAboutButtons() {
+        downloadMavenButton.addActionListener(e -> {
+            SpigotPluginGenerator.removeMaven();
+            SpigotPluginGenerator.downloadMaven();
+        });
     }
 
     public void fillPane(Container pane, List<RequiredProperty> properties, GridBagConstraints constraints) {
@@ -172,9 +117,8 @@ public class MainMenu extends JFrame {
         constraints.gridx = 0;
         constraints.gridy = 0;
 
-        for(RequiredProperty property : properties) {
+        for (RequiredProperty property : properties) {
             WrappedComponent component = property.add(pane, constraints);
-            System.out.println("Adding to fields: " + property.getKey() + " -> " + component);
             fields.put(property, component);
         }
     }
@@ -187,15 +131,12 @@ public class MainMenu extends JFrame {
         return c;
     }
 
-    private static GridBagConstraints getConstraints(int x, int y, double weightx, double weighty) {
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.gridx = x;
-        constraints.gridy = y;
-        constraints.weightx = weightx;
-        constraints.weighty = weighty;
-        constraints.insets = new Insets(MARGIN, MARGIN, MARGIN, MARGIN);
-        return constraints;
+    private JScrollPane wrapIntoScrollPane(Component panel) {
+        JPanel outerPanel = new JPanel(new BorderLayout());
+        outerPanel.add(panel, BorderLayout.NORTH);
+        JScrollPane scrollPane = new JScrollPane(outerPanel);
+        scrollPane.setBorder(BORDER);
+        return scrollPane;
     }
 
 

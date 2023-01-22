@@ -18,12 +18,12 @@ public class WrappedComponent {
     }
 
     public String getValue() {
-        if(booleanValue != null) {
+        if (booleanValue != null) {
             return String.valueOf(booleanValue);
         }
-        if(component instanceof JTextField) {
+        if (component instanceof JTextField) {
             return ((JTextField) component).getText();
-        } else if(component instanceof JCheckBox) {
+        } else if (component instanceof JCheckBox) {
             return String.valueOf(((JCheckBox) component).isSelected());
         } else {
             throw new IllegalArgumentException(component + " is not a readable component");

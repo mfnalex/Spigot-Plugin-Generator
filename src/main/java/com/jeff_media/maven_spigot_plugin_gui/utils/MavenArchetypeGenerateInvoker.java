@@ -1,64 +1,108 @@
 package com.jeff_media.maven_spigot_plugin_gui.utils;
 
-import com.jeff_media.maven_spigot_plugin_gui.SpigotPluginGenerator;
 import com.jeff_media.maven_spigot_plugin_gui.data.Archetype;
 import com.jeff_media.maven_spigot_plugin_gui.data.RequiredProperty;
 import com.jeff_media.maven_spigot_plugin_gui.data.WrappedComponent;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
-import java.awt.*;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.PrintStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 
-public class MavenArchetypeGenerateInvoker implements Runnable {
+@Slf4j
+public class MavenArchetypeGenerateInvoker /*implements Runnable */ {
     private final Archetype archetype;
-    private final Map<RequiredProperty, WrappedComponent> properties;
-    private final JTextPane logTextArea;
+    //private final Map<RequiredProperty, WrappedComponent> properties;
+    private final JTextArea logTextArea;
     private final File mavenExecutable;
     private final File workingDir;
+    private final File mavenFolder;
 
-    private final PipedInputStream stdOutPin = new PipedInputStream();
-    private final PipedInputStream stdErrPin = new PipedInputStream();
-    private Thread stdOutReader;
-    private Thread stdErrReader;
-
-    private StyledDocument doc;
-    private Style style;
-
-    private boolean stopThreads;
-
-    public MavenArchetypeGenerateInvoker(Archetype archetype, Map<RequiredProperty, WrappedComponent> properties, JTextPane logTextArea, File mavenExecutable, File workingDir) {
+    public MavenArchetypeGenerateInvoker(Archetype archetype, /*Map<RequiredProperty, WrappedComponent> properties, */JTextArea logTextArea, File mavenExecutable, File workingDir, File mavenFolder) {
         this.archetype = archetype;
-        this.properties = properties;
+        //this.properties = properties;
         this.logTextArea = logTextArea;
         this.mavenExecutable = mavenExecutable;
         this.workingDir = workingDir;
+        this.mavenFolder = mavenFolder;
 
-        doc = (StyledDocument) logTextArea.getDocument();
-        style = doc.addStyle("ConsoleStyle", null);
     }
 
-    public List<String> getMavenCommand() {
-        List<String> parameters = new ArrayList<>(Arrays.asList(
-                mavenExecutable.getAbsolutePath(),
-                "-DinteractiveMode=false",
-                "-Dmaven.home=" + SpigotPluginGenerator.getMavenExecutable().getParentFile().getParentFile().getAbsolutePath(),
-                "-Dmaven.multiModuleProjectDirectory=" + workingDir.getAbsolutePath(),
-                String.format("-DarchetypeGroupId=%s", archetype.getGroupId()),
-                String.format("-DarchetypeArtifactId=%s", archetype.getArtifactId()),
-                String.format("-DarchetypeVersion=%s", archetype.getVersion()),
-                String.format("-DarchetypeRepository=%s", archetype.getRepository())));
+    public void downloadArchetype(Archetype archetype) {
+        runMavenCommand(null, Arrays.asList("dependency:get", "-U", "-DgroupId=" + archetype.getGroupId(), "-DartifactId=" + archetype.getArtifactId(), "-Dversion=" + archetype.getVersion(), "-DremoteRepositories=" + archetype.getRepository()));
+    }
+
+    public int runMavenCommand(@Nullable List<String> properties, List<String> additionalCommands) {
+        String javaHome = System.getProperty("java.home");
+        File javaPath = new File(new File(javaHome, "bin"), OsUtils.isWindows() ? "java.exe" : "java");
+        String classPathParameter = "\"" + new File(new File(mavenFolder, "boot"), "plexus-classworlds-2.6.0.jar").getAbsolutePath() + ";" + new File(new File(mavenFolder, "boot"), "plexus-classworlds.license").getAbsolutePath() + "\"";
+        String mainClass = "org.codehaus.classworlds.Launcher";
+        String multiModulePath = "\"-Dmaven.multiModuleProjectDirectory=" + workingDir.getAbsolutePath() + "\"";
+        String classWorlds = "\"-Dclassworlds.conf=" + new File(mavenExecutable.getParentFile(), "m2.conf").getAbsolutePath() + "\"";
+        String mavenHome = "\"-Dmaven.home=" + mavenExecutable.getParentFile().getParentFile().getAbsolutePath() + "\"";
+        List<String> commands = new ArrayList<>(Arrays.asList("\"" + javaPath + "\"", multiModulePath, classWorlds, mavenHome, "-classpath", classPathParameter, mainClass));
+        if (properties != null) {
+            commands.addAll(properties);
+        }
+        commands.addAll(Arrays.asList("-Dfile.encoding=UTF-8", "-DinteractiveMode=false"));
+        commands.addAll(additionalCommands);
+
+
+        int result = 255;
+
+        //System.out.println("Windows command:\n\n" + String.join(" ", commands));
+        log.info("Command: " + String.join(" ", commands));
+        //System.out.println("Linux command: " + linux);
+        ProcessBuilder pb = new ProcessBuilder().directory(workingDir).command(commands);
+        //builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
+        //Process proc = builder.start();
+
+        try {
+            Process process = pb.start();
+            InputStream is = process.getInputStream();
+            Reader reader = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(reader);
+            String line;
+            while ((line = br.readLine()) != null) {
+                log.info(line);
+                logTextArea.append(line + "\n");
+
+            }
+//            log.info("Sleeping 5 seconds");
+//            Thread.sleep(5000);
+//            log.info("Sleep done");
+            result = process.waitFor();
+            logTextArea.append("\nProcess exited with code " + result + "\n");
+            //throw new IllegalArgumentException("Test asd");
+        } catch (Throwable ex) {
+
+
+            StringWriter stackTraceWriter = new StringWriter();
+            ex.printStackTrace(new PrintWriter(stackTraceWriter));
+            logTextArea.append(stackTraceWriter+"\n");
+
+
+        }
+
+        return result;
+
+    }
+
+    public List<String> getArchetypeProperties(Map<RequiredProperty, WrappedComponent> properties) {
+        List<String> parameters = new ArrayList<>(Arrays.asList(String.format("-DarchetypeGroupId=%s", archetype.getGroupId()), String.format("-DarchetypeArtifactId=%s", archetype.getArtifactId()), String.format("-DarchetypeVersion=%s", archetype.getVersion()), String.format("-DarchetypeRepository=%s", archetype.getRepository())));
         for (Map.Entry<RequiredProperty, WrappedComponent> entry : properties.entrySet()) {
             RequiredProperty property = entry.getKey();
             String value = entry.getValue().getValue();
@@ -69,117 +113,4 @@ public class MavenArchetypeGenerateInvoker implements Runnable {
         return parameters;
     }
 
-    public void runMaven() {
-        List<String> params = getMavenCommand();
-        String windows = params.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "));
-        //String linux = String.join(" ", params);
-        windows = windows + " org.apache.maven.plugins:maven-archetype-plugin:RELEASE:generate";
-        System.out.println("Windows command: " + windows);
-        //System.out.println("Linux command: " + linux);
-        ProcessBuilder builder = new ProcessBuilder()
-                .directory(mavenExecutable.getParentFile())
-                .command(windows)
-                .inheritIO();
-        //builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
-        try {
-            Process proc = builder.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    public void setupLogStream() {
-//        try {
-//            PipedOutputStream stdOutPout = new PipedOutputStream(stdOutPin);
-//            PipedOutputStream stdErrPout = new PipedOutputStream(stdErrPin);
-//            System.setOut(new PrintStream(stdOutPout, true));
-//            System.setErr(new PrintStream(stdErrPout, true));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
-        try {
-            PipedOutputStream stdOutPos = new PipedOutputStream(this.stdOutPin);
-            System.setOut(new PrintStream(stdOutPos, true));
-        } catch (IOException | SecurityException io) {
-            logTextArea.setText("Couldn't redirect STDOUT to this console\n" + io.getMessage());
-        }
-
-        try {
-            PipedOutputStream stdErrPos = new PipedOutputStream(this.stdErrPin);
-            System.setErr(new PrintStream(stdErrPos, true));
-        } catch (IOException | SecurityException io) {
-            logTextArea.setText("Couldn't redirect STDERR to this console\n" + io.getMessage());
-        }
-        
-        
-
-        stopThreads = false; // Will be set to true at closing time. This will stop the threads
-
-        // Starting two threads to read the PipedInputStreams
-        stdOutReader = new Thread(this);
-        stdOutReader.setDaemon(true);
-        stdOutReader.start();
-
-        stdErrReader = new Thread(this);
-        stdErrReader.setDaemon(true);
-        stdErrReader.start();
-    }
-
-    @Override
-    public synchronized void run() {
-        try {
-            while (Thread.currentThread() == stdOutReader) {
-                try {
-                    this.wait(100);
-                } catch (InterruptedException ie) {
-                }
-                if (stdOutPin.available() != 0) {
-                    String input = this.readLine(stdOutPin);
-                    StyleConstants.setForeground(style, Color.black);
-                    doc.insertString(doc.getLength(), input, style);
-                    // Make sure the last line is always visible
-                    logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
-                }
-                if (stopThreads) {
-                    return;
-                }
-            }
-
-            while (Thread.currentThread() == stdErrReader) {
-                try {
-                    this.wait(100);
-                } catch (InterruptedException ie) {
-                }
-                if (stdErrPin.available() != 0) {
-                    String input = this.readLine(stdErrPin);
-                    StyleConstants.setForeground(style, Color.red);
-                    doc.insertString(doc.getLength(), input, style);
-                    // Make sure the last line is always visible
-                    logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
-                }
-                if (stopThreads) {
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            logTextArea.setText("\nConsole reports an Internal error.");
-            logTextArea.setText("The error is: " + e);
-        }
-    }
-
-    private synchronized String readLine(PipedInputStream in) throws IOException {
-        String input = "";
-        do {
-            int available = in.available();
-            if (available == 0) {
-                break;
-            }
-            byte b[] = new byte[available];
-            in.read(b);
-            input += new String(b, 0, b.length);
-        } while (!input.endsWith("\n") && !input.endsWith("\r\n") && !stopThreads);
-        return input;
-    }
 }
