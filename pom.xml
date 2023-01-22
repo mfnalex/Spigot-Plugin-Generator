@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.jeff_media</groupId>
+    <groupId>me.epic</groupId>
     <artifactId>maven-spigot-plugin-gui</artifactId>
     <version>1.0.0</version>
 
@@ -105,5 +105,19 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>jeff-media</id>
+            <url>https://repo.jeff-media.de</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>jeff-media-community</id>
+            <url>https://hub.jeff-media.com/nexus/repository/jeff-media-community/</url>
+        </repository>
+    </distributionManagement>
 
 </project>

@@ -21,6 +21,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class MavenArchetypeGenerateInvoker /*implements Runnable */ {
@@ -45,17 +46,35 @@ public class MavenArchetypeGenerateInvoker /*implements Runnable */ {
         runMavenCommand(null, Arrays.asList("dependency:get", "-U", "-DgroupId=" + archetype.getGroupId(), "-DartifactId=" + archetype.getArtifactId(), "-Dversion=" + archetype.getVersion(), "-DremoteRepositories=" + archetype.getRepository()));
     }
 
+    private static String formatForOsSpecificConsole(String command) {
+        if(command.contains("\"")) {
+            command = command.replace("\"", "\\\"");
+        }
+        if(command.contains("'")) {
+            command = command.replace("'", "\\'");
+        }
+        if(command.contains(" ")) {
+            if (OsUtils.isWindows()) {
+                return "\"" + command + "\"";
+            } else {
+                return command.replace(" ", "\\ ");
+            }
+        }
+        return command;
+    }
+
     public int runMavenCommand(@Nullable List<String> properties, List<String> additionalCommands) {
         String javaHome = System.getProperty("java.home");
         File javaPath = new File(new File(javaHome, "bin"), OsUtils.isWindows() ? "java.exe" : "java");
-        String classPathParameter = "\"" + new File(new File(mavenFolder, "boot"), "plexus-classworlds-2.6.0.jar").getAbsolutePath() + ";" + new File(new File(mavenFolder, "boot"), "plexus-classworlds.license").getAbsolutePath() + "\"";
+        String classPathParameter = new File(new File(mavenFolder, "boot"), "plexus-classworlds-2.6.0.jar").getAbsolutePath();
         String mainClass = "org.codehaus.classworlds.Launcher";
-        String multiModulePath = "\"-Dmaven.multiModuleProjectDirectory=" + workingDir.getAbsolutePath() + "\"";
-        String classWorlds = "\"-Dclassworlds.conf=" + new File(mavenExecutable.getParentFile(), "m2.conf").getAbsolutePath() + "\"";
-        String mavenHome = "\"-Dmaven.home=" + mavenExecutable.getParentFile().getParentFile().getAbsolutePath() + "\"";
-        List<String> commands = new ArrayList<>(Arrays.asList("\"" + javaPath + "\"", multiModulePath, classWorlds, mavenHome, "-classpath", classPathParameter, mainClass));
+        String multiModulePath = formatForOsSpecificConsole("-Dmaven.multiModuleProjectDirectory=" + workingDir.getAbsolutePath());
+        String classWorlds = "-Dclassworlds.conf=" + new File(mavenExecutable.getParentFile(), "m2.conf").getAbsolutePath();
+        String mavenHome = "-Dmaven.home=" + mavenExecutable.getParentFile().getParentFile().getAbsolutePath();
+        String escapedJavaPath = formatForOsSpecificConsole(javaPath.getAbsolutePath());
+        List<String> commands = new ArrayList<>(Arrays.asList(escapedJavaPath, multiModulePath, classWorlds, mavenHome, "-classpath", classPathParameter, mainClass));
         if (properties != null) {
-            commands.addAll(properties);
+            commands.addAll(properties.stream().map(MavenArchetypeGenerateInvoker::formatForOsSpecificConsole).collect(Collectors.toList()));
         }
         commands.addAll(Arrays.asList("-Dfile.encoding=UTF-8", "-DinteractiveMode=false"));
         commands.addAll(additionalCommands);
@@ -67,19 +86,29 @@ public class MavenArchetypeGenerateInvoker /*implements Runnable */ {
         log.info("Command: " + String.join(" ", commands));
         //System.out.println("Linux command: " + linux);
         ProcessBuilder pb = new ProcessBuilder().directory(workingDir).command(commands);
+        for(String param : pb.command()) {
+            log.info("Param: " + param);
+        }
         //builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
         //Process proc = builder.start();
 
         try {
+            logTextArea.append(String.join(" ", pb.command())+ "\n\n");
             Process process = pb.start();
             InputStream is = process.getInputStream();
+            InputStream eis = process.getErrorStream();
             Reader reader = new InputStreamReader(is);
+            Reader ereader = new InputStreamReader(eis);
             BufferedReader br = new BufferedReader(reader);
+            BufferedReader ebr = new BufferedReader(ereader);
             String line;
             while ((line = br.readLine()) != null) {
                 log.info(line);
                 logTextArea.append(line + "\n");
-
+            }
+            while((line = ebr.readLine()) != null) {
+                log.error(line);
+                logTextArea.append(line + "\n");
             }
 //            log.info("Sleeping 5 seconds");
 //            Thread.sleep(5000);
