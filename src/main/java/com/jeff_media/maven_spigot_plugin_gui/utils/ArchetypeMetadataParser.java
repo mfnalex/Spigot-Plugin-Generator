@@ -16,7 +16,8 @@ import java.util.List;
 
 public class ArchetypeMetadataParser {
 
-    @Getter List<RequiredProperty> requiredProperties = new ArrayList<>();
+    @Getter
+    final List<RequiredProperty> requiredProperties = new ArrayList<>();
 
     public ArchetypeMetadataParser(File archetypeMetadataFile) throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -25,9 +26,9 @@ public class ArchetypeMetadataParser {
 
         NodeList propertiesNodeList = document.getElementsByTagName("requiredProperty");
 
-        for(int i = 0; i < propertiesNodeList.getLength(); i++) {
+        for (int i = 0; i < propertiesNodeList.getLength(); i++) {
             RequiredProperty property = RequiredProperty.fromNode(propertiesNodeList.item(i));
-            if(property != null) {
+            if (property != null) {
                 requiredProperties.add(property);
             }
         }
