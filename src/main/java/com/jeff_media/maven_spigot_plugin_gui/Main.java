@@ -2,18 +2,20 @@ package com.jeff_media.maven_spigot_plugin_gui;
 
 
 import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
+import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
 @Slf4j
 public class Main {
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        FlatLightLaf.setup();
+        FlatMacDarkLaf.setup();
         log.info("Starting SpigotPluginGenerator");
 
         try {
