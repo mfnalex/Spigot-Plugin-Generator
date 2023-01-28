@@ -29,6 +29,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Spigot-Plugin-Generator
-          path: target/Spigot-Plugin-Generator-1.0.1.jar
+          name: Spigot-Plugin-Generator-*.jar
       - uses: actions/checkout@v3
