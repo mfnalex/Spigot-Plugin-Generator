@@ -24,7 +24,6 @@ jobs:
       - name: ls 1
         run: ls -l target/
 
-      - uses: actions/checkout@v3
       - name: ls 2
         run: ls -l target/
 
@@ -32,3 +31,4 @@ jobs:
         with:
           name: Spigot-Plugin-Generator
           path: target/Spigot-Plugin-Generator-1.0.1.jar
+      - uses: actions/checkout@v3
