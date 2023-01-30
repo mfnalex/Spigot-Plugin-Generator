@@ -52,20 +52,6 @@ public class SpigotPluginGenerator {
 
     public SpigotPluginGenerator() throws ExecutionException, InterruptedException {
 
-
-        try {
-            Application.getApplication().setDockIconImage(getAppIcon());
-        } catch (Throwable ignored) {
-
-        }
-        try {
-            Class<?> taskbarClass = Class.forName("java.awt.Taskbar");
-            Object taskbar = taskbarClass.getMethod("getTaskbar").invoke(null);
-            taskbarClass.getMethod("setIconImage", Image.class).invoke(taskbar, getAppIcon());
-        } catch (Throwable ignored) {
-
-        }
-
         String version = "N/A";
         try {
             version = Resources.toString(Resources.getResource("version"), StandardCharsets.UTF_8);
@@ -215,11 +201,6 @@ public class SpigotPluginGenerator {
         } else {
             return new File(MAVEN_EXECUTABLE_FOLDER, "mvn");
         }
-    }
-
-    public static Image getAppIcon() throws Exception {
-        String path = "/AppIcon.appiconset/mac1024.png";
-        return ImageIO.read(SpigotPluginGenerator.class.getResourceAsStream(path));
     }
 
 }

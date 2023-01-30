@@ -52,10 +52,6 @@ public class MainMenu extends JFrame {
     public MainMenu(SpigotPluginGenerator spigotPluginGenerator, List<RequiredProperty> allProperties) {
         super("Spigot Plugin Creator");
 
-        try {
-            setIconImage(SpigotPluginGenerator.getAppIcon());
-        } catch (Exception ignored) { }
-
         this.main = spigotPluginGenerator;
         this.allProperties = allProperties;
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
