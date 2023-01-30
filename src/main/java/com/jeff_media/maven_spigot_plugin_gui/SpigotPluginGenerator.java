@@ -1,5 +1,6 @@
 package com.jeff_media.maven_spigot_plugin_gui;
 
+import com.apple.eawt.Application;
 import com.google.common.io.Resources;
 import com.jeff_media.maven_spigot_plugin_gui.data.Archetype;
 import com.jeff_media.maven_spigot_plugin_gui.data.Archetypes;
@@ -20,8 +21,10 @@ import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.xml.sax.SAXException;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +51,20 @@ public class SpigotPluginGenerator {
     private MainMenu mainMenu;
 
     public SpigotPluginGenerator() throws ExecutionException, InterruptedException {
+
+
+        try {
+            Application.getApplication().setDockIconImage(getAppIcon());
+        } catch (Throwable ignored) {
+
+        }
+        try {
+            Class<?> taskbarClass = Class.forName("java.awt.Taskbar");
+            Object taskbar = taskbarClass.getMethod("getTaskbar").invoke(null);
+            taskbarClass.getMethod("setIconImage", Image.class).invoke(taskbar, getAppIcon());
+        } catch (Throwable ignored) {
+
+        }
 
         String version = "N/A";
         try {
@@ -198,6 +215,11 @@ public class SpigotPluginGenerator {
         } else {
             return new File(MAVEN_EXECUTABLE_FOLDER, "mvn");
         }
+    }
+
+    public static Image getAppIcon() throws Exception {
+        String path = "/AppIcon.appiconset/mac1024.png";
+        return ImageIO.read(SpigotPluginGenerator.class.getResourceAsStream(path));
     }
 
 }

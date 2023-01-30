@@ -131,7 +131,7 @@ public class MavenArchetypeGenerateInvoker /*implements Runnable */ {
     }
 
     public List<String> getArchetypeProperties(Map<RequiredProperty, WrappedComponent> properties) {
-        List<String> parameters = new ArrayList<>(Arrays.asList(String.format("-DarchetypeGroupId=%s", archetype.getGroupId()), String.format("-DarchetypeArtifactId=%s", archetype.getArtifactId()), String.format("-DarchetypeVersion=%s", archetype.getVersion()), String.format("-DarchetypeRepository=%s", archetype.getRepository())));
+        List<String> parameters = new ArrayList<>(Arrays.asList(String.format("-DarchetypeGroupId=%s", archetype.getGroupId()), String.format("-DarchetypeArtifactId=%s", archetype.getArtifactId()), String.format("-DarchetypeVersion=%s", archetype.getVersion()), String.format("-DarchetypeRepositories=%s", archetype.getRepository())));
         for (Map.Entry<RequiredProperty, WrappedComponent> entry : properties.entrySet()) {
             RequiredProperty property = entry.getKey();
             String value = entry.getValue().getValue();

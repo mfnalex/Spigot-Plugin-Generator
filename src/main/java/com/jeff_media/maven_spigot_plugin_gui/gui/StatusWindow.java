@@ -17,6 +17,10 @@ public class StatusWindow extends JFrame {
 
     public StatusWindow(String text) {
         super("Spigot Plugin Generator");
+        try {
+            setIconImage(SpigotPluginGenerator.getAppIcon());
+        } catch (Exception ignored) { }
+
         setSize(800, 300);
         JPanel panel = new JPanel(new BorderLayout());
         bar = new JProgressBar();
